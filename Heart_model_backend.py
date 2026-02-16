@@ -26,6 +26,13 @@ class InputData(BaseModel):
     ca: int                 # number of vessels (0–3)
     thal: int  
 model = joblib.load("Heart disease prediction ml model.joblib")
+def Shap_explainations(df):
+    X_processed = model.named_steps['CT'].transform(df)
+    explainer = shap.TreeExplainer(model.named_steps['model'])
+    shap_values = explainer(X_processed).values[0 , : , 1]
+    impt = pd.Series(shap_values , index = model.named_steps['CT'].get_feature_names_out())
+    top_ind = impt.abs().sort_values(ascending = False).head(3)
+    return top_ind
 @app.post("/predict")
 def predict(data : InputData):
     df = {
@@ -33,7 +40,9 @@ def predict(data : InputData):
         "thalach":data.thalach , "exang":data.exang , "oldpeak":data.oldpeak , "slope": data.slope , 
             "ca":data.ca , "thal":data.thal}
     df = pd.DataFrame([df])
+    Explain = Shap_explainations(df)
     reply = model.predict(df)
     prediction = model.predict_proba(df)[: , 1][0]
-    return {"Chances of Heart disease": f"{round(prediction*100 , 4)}%" , "Risk Level":["Low" if reply == 0 else "High"]}
+    return {"Explain":Explain , "Chances of Heart disease": f"{round(prediction*100 , 4)}%" , "Risk Level":["Low" if reply == 0 else "High"]}
+
 
