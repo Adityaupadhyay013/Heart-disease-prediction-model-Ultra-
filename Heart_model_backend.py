@@ -1,5 +1,6 @@
 from fastapi import FastAPI 
 import joblib
+import shap
 from pydantic import BaseModel
 import pandas as pd
 from fastapi.middleware.cors import CORSMiddleware
@@ -44,5 +45,6 @@ def predict(data : InputData):
     reply = model.predict(df)
     prediction = model.predict_proba(df)[: , 1][0]
     return {"Explain":Explain , "Chances of Heart disease": f"{round(prediction*100 , 4)}%" , "Risk Level":["Low" if reply == 0 else "High"]}
+
 
 
